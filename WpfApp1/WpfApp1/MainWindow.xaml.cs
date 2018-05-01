@@ -32,55 +32,56 @@ namespace WpfApp1
             using (PowerShell PowerShellInstance = PowerShell.Create())
             {
 
-                var PSScript = "get-service";
+                var PSScript = "Get-Service";
 
                 // use "AddScript" to add the contents of a script file to the end of the execution pipeline.
                 // use "AddCommand" to add individual commands/cmdlets to the end of the execution pipeline.
                 PowerShellInstance.AddScript(PSScript);
 
-                // use "AddParameter" to add a single parameter to the last command/script on the pipeline.
-                //PowerShellInstance.AddParameter("param1", "parameter 1 value!");
+                Collection <PSObject> PSO = PowerShellInstance.Invoke();
 
-                // invoke execution on the pipeline (collecting output)
-                Collection<PSObject> PSOutput = PowerShellInstance.Invoke();
-
-                // check the other output streams (for example, the error stream)
                 if (PowerShellInstance.Streams.Error.Count > 0)
                 {
-                    // error records were written to the error stream.
-                    // do something with the items found.
-                    TextBox1.Text += PowerShellInstance.Streams.Error.ToString();
+                       // var error = PowerShellInstance.Streams.Error as Collection<ErrorRecord>;
+                    var error = PowerShellInstance.Streams.Error.ReadAll() as Collection<ErrorRecord>;
+                    if (error != null)
+                        {
+                            foreach (ErrorRecord er in error)
+                            {
+                            TextBox1.AppendText("[PowerShell]: Error in cmdlet: " + er.Exception.Message + "\n");
+                            }
+                        }
+                    return;
                 }
 
+                if (PSO.Count() == 0)
+
+                {
+                    TextBox1.AppendText("Null PS object was returned during the script" + "\n");
+                }
+                
+
                 // loop through each output object item
-                foreach (PSObject outputItem in PSOutput)
+                foreach (dynamic outputItem in PSO.ToList())
                 {
                     // if null object was dumped to the pipeline during the script then a null
                     // object may be present here. check for null to prevent potential NRE.
-                    
+
                     if (outputItem == null)
 
                     {
-                        TextBox1.Text += "Null PS object was returned during the script";
+                        TextBox1.AppendText("Null null object was dumped to the pipeline during the PS script" + "\n");
                     }
 
                     if (outputItem != null)
 
                     {
                         //TODO: do something with the output item  
-                        TextBox1.AppendText(outputItem.BaseObject.ToString());
-                        TextBox1.Text += "1";//outputItem.BaseObject.ToString();
+                        TextBox1.AppendText(outputItem.DisplayName+"\n");
                     }
                 }
 
-
-
-
             }
-
-
-        }
-
- 
+        } 
     }
 }
